@@ -1,0 +1,25 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Secure Information Form</title>
+<style>body{font:16px system-ui;max-width:420px;margin:32px auto;padding:0 16px;color:#111}label{display:block;margin:14px 0 4px;font-weight:600}
+input,select,button{width:100%;padding:12px;font-size:16px;box-sizing:border-box}button{margin-top:20px;background:#1f3864;color:#fff;border:0;border-radius:8px}
+.note{color:#555;font-size:14px}.err{color:#b00020}</style></head><body>
+<h2>Secure Information Form</h2><p class="note">This link works once and expires. Your information is encrypted.</p>
+<form id="f" hidden></form><p id="msg"></p>
+<script>
+const SUPA="https://snrohbulruqmhwfbgyju.supabase.co/functions/v1", ANON="PASTE_SUPABASE_ANON_KEY";
+const t=new URLSearchParams(location.search).get("t"), f=document.getElementById("f"), msg=document.getElementById("msg");
+const H={"Content-Type":"application/json",apikey:ANON,Authorization:"Bearer "+ANON};
+const post=(fn,b)=>fetch(SUPA+"/"+fn,{method:"POST",headers:H,body:JSON.stringify(b)}).then(async r=>({ok:r.ok,d:await r.json()}));
+const ssn=`<label>Social Security Number</label><input name="ssn" inputmode="numeric" autocomplete="off" placeholder="XXX-XX-XXXX" required>`;
+const bank=`<label>Bank name</label><input name="bank_name" required><label>Routing number</label><input name="routing" inputmode="numeric" autocomplete="off" required>
+<label>Account number</label><input name="account" inputmode="numeric" autocomplete="off" required><label>Account type</label><select name="account_type"><option>checking</option><option>savings</option></select>`;
+(async()=>{ if(!t){msg.textContent="Invalid link.";return}
+ const {ok,d}=await post("dc-get-request",{token:t});
+ if(!ok){msg.textContent="This link has expired or was already used. Please ask your agent for a new one.";return}
+ f.innerHTML=(d.first_name?`<p>Hi ${d.first_name.replace(/[<>&]/g,"")},</p>`:"")+(d.form_type!="banking"?ssn:"")+(d.form_type!="ssn"?bank:"")+`<button>Submit securely</button>`;
+ if(d.form_type=="full")msg.textContent="";f.hidden=false;
+ f.onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(f));b.token=t;
+  const r=await post("dc-submit",b);
+  if(r.ok){f.hidden=true;msg.textContent="Thank you — your information was submitted securely. You can close this page."}
+  else{msg.className="err";msg.textContent=r.d.error||"Something went wrong."}}})();
+</script></body></html>

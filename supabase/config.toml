@@ -1,0 +1,5 @@
+# Public endpoints used by the client-facing form (no agent login). Everything else requires an agent JWT.
+[functions.dc-get-request]
+verify_jwt = false
+[functions.dc-submit]
+verify_jwt = false
